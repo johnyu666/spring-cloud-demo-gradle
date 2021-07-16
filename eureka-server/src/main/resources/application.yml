@@ -1,0 +1,8 @@
+server:
+  port: 9000
+eureka:
+  client:
+    fetch-registry: false
+    register-with-eureka: false
+  instance:
+    hostname: localhost

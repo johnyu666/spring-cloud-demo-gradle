@@ -1,0 +1,122 @@
+
+/**
+ * ==================================================
+ * 在父工程中声明"构建插件的版本"，在子工程中可以不再声明版本
+ * =================================================
+ */
+plugins {
+    id 'java'
+    //与org.springframework.boot:spring-boot-gradle-plugin:2.3.12.RELEASE 相对应，采用此版本的原因是它与spring-clound:HSR12相对应
+    id 'org.springframework.boot' version '2.3.12.RELEASE'
+    //与io.spring.dependency-management:io.spring.dependency-management.gradle.plugin:1.0.11.RELEASE 相对应
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+}
+
+//父工程坐标（与子工程没有关系）
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+
+/**
+ * =========================
+ * 为所有的工程配置
+ * ========================
+ */
+allprojects {
+    apply plugin: 'java'
+    /**
+     * ============================================================
+     * 此坐标将成为子工程的默认项，
+     * 配合settings.gradle中的rootProject.name='xxx',将完成项目定位
+     * ============================================================
+     */
+    group 'org.example'
+    version '1.0-SNAPSHOT'
+//    远程库的镜像
+    repositories {
+        mavenLocal()
+        maven {url 'https://maven.aliyun.com/repository/central'}
+        maven {url 'https://maven.aliyun.com/repository/public'}
+        maven {url 'https://maven.aliyun.com/repository/google'}
+        maven {url 'https://maven.aliyun.com/repository/gradle-plugin'}
+        maven {url 'https://maven.aliyun.com/repository/spring'}
+        maven {url 'https://maven.aliyun.com/repository/spring-plugin'}
+        maven {url 'https://maven.aliyun.com/repository/apache-snapshots'}
+        mavenCentral()
+    }
+}
+
+
+/**
+ * ==================================
+ * 所有子工程的配置
+ * ==================================
+ */
+subprojects {
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+    //排除commons模块,其它的模块采用相同的配置
+    if(it.name!="commons") {
+        apply plugin: 'org.springframework.boot'
+        apply plugin: 'io.spring.dependency-management'
+        dependencies {
+            implementation 'org.springframework.boot:spring-boot-starter-web'
+            testImplementation 'org.springframework.boot:spring-boot-starter-test'
+            //完成热布署
+            runtimeOnly 'org.springframework.boot:spring-boot-devtools'
+
+        }
+        //指定spring-cloud的版本，注意此版本与spring-boot 2.3.12.RELEASE 兼容
+        dependencyManagement {
+            imports {
+                mavenBom "org.springframework.cloud:spring-cloud-dependencies:Hoxton.SR12"
+            }
+        }
+        //演示如何向清单文件中添加信息
+        jar {
+            manifest.attributes provider: 'gradle'
+        }
+    }
+}
+project(":eureka-server"){
+    dependencies {
+        implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-server'
+    }
+}
+
+project(":payment") {
+    dependencies {
+        implementation 'org.example:commons:1.0-SNAPSHOT'
+        implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    }
+}
+project(":order"){
+    dependencies {
+        implementation 'org.example:commons:1.0-SNAPSHOT'
+        implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    }
+}
+/**
+ * =========================================
+ * 单独配置commons模块，此模块将安装到mavenLocal
+ * 命令行：gradle publishToMavenLocal
+ * ========================================
+ */
+project(':commons') {
+    apply plugin: 'java-library'
+    apply plugin: 'maven-publish'
+    dependencies {
+        annotationProcessor 'org.projectlombok:lombok:1.18.20'
+        implementation 'org.projectlombok:lombok:1.18.20'
+    }
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                from components.java
+            }
+        }
+    }
+}
+
+
+

@@ -1,0 +1,2 @@
+//此工程所有的配置均在父工程的build.gradle中
+//命令行：gradle publishToMavenLocal

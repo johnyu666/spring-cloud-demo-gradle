@@ -1,0 +1,6 @@
+rootProject.name = 'spring-cloud-demo-gradle'
+include 'payment'
+include 'order'
+include 'commons'
+include 'eureka-server'
+
